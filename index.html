@@ -6281,8 +6281,16 @@ try{const r=document.documentElement,low=(navigator.hardwareConcurrency||8)<=4||
 .ytp-link{position:absolute;right:12px;background:none;border:0;color:var(--mu);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;padding:8px}
 .yt-pop{margin-bottom:6px}
 .ytp-setup{display:block;margin:8px 0 2px;padding:9px 12px;border-radius:12px;border:1px dashed var(--ln);background:none;color:var(--ac);font:inherit;font-size:12.5px;text-align:left;cursor:pointer}
-html.xz-yt #mini{display:none!important}
-@media (max-width:759px){#ytp{left:12px;right:12px;width:auto;bottom:calc(88px + env(safe-area-inset-bottom,0px))}}
+/* v135: tiny draggable floating card; the mini player stays visible and drives the video */
+#ytp{left:0;top:0;right:auto;bottom:auto;width:176px;border-radius:12px;box-shadow:0 8px 24px var(--sc);touch-action:none}
+#ytp.msg{width:min(300px,calc(100vw - 24px))}
+#ytp.snap{transition:left .22s cubic-bezier(.2,.8,.2,1),top .22s cubic-bezier(.2,.8,.2,1)}
+.ytp-grip{display:flex;align-items:center;justify-content:space-between;height:18px;padding-left:6px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;background:var(--sf)}
+.ytp-grip:active{cursor:grabbing}.ytp-grip i{flex:1;height:3px;max-width:34px;margin:0 auto;border-radius:3px;background:var(--ln)}
+.ytp-grip button{width:22px;height:18px;border:0;background:none;color:var(--mu);font-size:11px;line-height:1;cursor:pointer;padding:0}
+#ytp:not(.docked) .ytp-info,#ytp:not(.docked) .ytp-bar,#ytp:not(.docked) .ytp-ctl{display:none}
+#ytp.docked .ytp-grip{display:none}
+@media (max-width:759px){#ytp{width:124px;border-radius:10px}#ytp.msg{width:min(280px,calc(100vw - 24px))}.ytp-grip{height:16px}.ytp-grip button{height:16px}}
 @media (prefers-reduced-motion:no-preference){#ytp:not([hidden]){animation:ytpin .22s ease-out}@keyframes ytpin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}}
 /* v134: video docked onto the album art in the full player, diagnostics */
 #ytp.docked{display:flex;flex-direction:column;box-shadow:none;border:0;background:#000}
@@ -6358,7 +6366,7 @@ async function apiSearch(t,signal){
  return scored.map(x=>x.id)}
 
 /* ---------------------------------------------------------------- YouTube player */
-const YP={tok:0,active:false,track:null,ids:[],i:0,player:null,ready:false,api:null,tick:0,state:-1,host:'https://www.youtube.com',hostTried:false,raf:0,watch:0,lastErr:0};
+const YP={corner:(()=>{try{return localStorage.getItem('xzYtCorner')||'br'}catch(e){return'br'}})(),tok:0,active:false,track:null,ids:[],i:0,player:null,ready:false,api:null,tick:0,state:-1,host:'https://www.youtube.com',hostTried:false,raf:0,watch:0,lastErr:0};
 const HOSTS=['https://www.youtube.com','https://www.youtube-nocookie.com'];
 function loadAPI(){
  if(window.YT&&window.YT.Player)return Promise.resolve();
@@ -6375,17 +6383,17 @@ const searchLink=t=>t?`<a class="btn g" target="_blank" rel="noopener" href="htt
 function panel(){
  let el=document.getElementById('ytp');if(el)return el;
  el=document.createElement('div');el.id='ytp';el.hidden=true;el.setAttribute('role','region');el.setAttribute('aria-label','Full song on YouTube');
- el.innerHTML=`<div class="ytp-vid" id="ytp-vid"><div id="ytp-frame"></div></div>
+ el.innerHTML=`<div class="ytp-grip" id="ytp-grip" aria-label="Drag the video"><i></i><button data-yt="close" aria-label="Close video">✕</button></div><div class="ytp-vid" id="ytp-vid"><div id="ytp-frame"></div></div>
 <div class="ytp-info"><div class="ytp-txt" data-yt="open" role="button" tabindex="0" aria-label="Open the player"><b id="ytp-t"></b><small id="ytp-s"></small></div><button class="ib" data-yt="close" aria-label="Close">✕</button></div>
 <div class="ytp-msg" id="ytp-msg" hidden></div>
 <div class="ytp-bar" id="ytp-bar"><i id="ytp-fill"></i></div>
 <div class="ytp-ctl"><button class="ib" data-yt="prev" aria-label="Previous">${ic('prev',22)}</button><button class="ib ytp-pp" data-yt="toggle" id="ytp-pp" aria-label="Play">${ic('play',26)}</button><button class="ib" data-yt="next" aria-label="Next">${ic('next',22)}</button><button class="ytp-link" data-yt="change">Change video</button></div>`;
- document.body.appendChild(el);
+ document.body.appendChild(el);initDrag(el);
  el.addEventListener('click',e=>{const b=e.target.closest('[data-yt]');if(!b)return;e.stopPropagation();const a=b.dataset.yt;
   if(a==='close')stop(false);else if(a==='toggle')ytToggle();else if(a==='next')next(false);else if(a==='prev')prev();else if(a==='change'||a==='paste')askLink(YP.track);
   else if(a==='open'){try{if(cur())openP()}catch(x){}}else if(a==='key')askKey();else if(a==='retry')route(YP.track,true,{retry:true});else if(a==='host')switchHost()});
  return el}
-const setMsg=h=>{const m=document.getElementById('ytp-msg');if(!m)return;if(h){m.innerHTML=h;m.hidden=false}else{m.hidden=true;m.innerHTML=''}};
+const setMsg=h=>{const m=document.getElementById('ytp-msg'),c=document.getElementById('ytp');if(c)c.classList.toggle('msg',!!h&&!/ytp-wait/.test(h));if(!m)return;if(h){m.innerHTML=h;m.hidden=false}else{m.hidden=true;m.innerHTML=''}};
 const showVideo=on=>{const v=document.getElementById('ytp-vid');if(v)v.style.display=on?'':'none'};
 function paintBtns(){const pl=YP.state===1||YP.state===3;
  const b=document.getElementById('ytp-pp');if(b){b.innerHTML=ic(pl?'pause':'play',26);b.setAttribute('aria-label',pl?'Pause':'Play')}
@@ -6396,11 +6404,21 @@ function paintInfo(t){const a=document.getElementById('ytp-t'),b=document.getEle
 function layout(){const el=document.getElementById('ytp');if(!el||el.hidden)return;
  const ma=(typeof pOpen!=='undefined'&&pOpen)?q1('#pl #ma'):null;
  if(ma){const r=ma.getBoundingClientRect();if(r.width>60&&r.height>60){el.classList.add('docked');const s=el.style;s.left=r.left+'px';s.top=r.top+'px';s.width=r.width+'px';s.height=r.height+'px';s.right='auto';s.bottom='auto';s.borderRadius=getComputedStyle(ma).borderRadius||'20px';return}}
- if(el.classList.contains('docked')){el.classList.remove('docked');const s=el.style;s.left=s.top=s.width=s.height=s.right=s.bottom=s.borderRadius=''}}
+ if(el.classList.contains('docked')){el.classList.remove('docked');const s=el.style;s.left=s.top=s.width=s.height=s.right=s.bottom=s.borderRadius='';el.dataset.k=''}
+ if(!YP.drag){const k=YP.corner+'|'+innerWidth+'|'+innerHeight+'|'+el.offsetWidth+'|'+el.offsetHeight;if(el.dataset.k!==k){placeCorner(el,false);el.dataset.k=k}}}
+function placeCorner(el,snap){const w=el.offsetWidth,h=el.offsetHeight,m=10,mob=innerWidth<760,top=m+(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat'))||0)+(mob?0:0),
+  mi=document.getElementById('mini'),mh=mi&&mi.offsetParent!==null?mi.getBoundingClientRect().height:0,bot=Math.max(m,mh+m+(mob?64:0)),c=YP.corner||'br',
+  x=c[1]==='l'?m:innerWidth-w-m,y=c[0]==='t'?Math.max(top,m):innerHeight-h-bot;
+ if(snap)el.classList.add('snap');el.style.left=Math.max(0,x)+'px';el.style.top=Math.max(0,y)+'px';if(snap)setTimeout(()=>el.classList.remove('snap'),260)}
+function initDrag(el){const g=el.querySelector('#ytp-grip');let sx=0,sy=0,ox=0,oy=0,id=null;
+ g.addEventListener('pointerdown',e=>{if(e.target.closest('button')||el.classList.contains('docked'))return;id=e.pointerId;try{g.setPointerCapture(id)}catch(x){}YP.drag=true;sx=e.clientX;sy=e.clientY;const r=el.getBoundingClientRect();ox=r.left;oy=r.top;el.classList.remove('snap');e.preventDefault()});
+ g.addEventListener('pointermove',e=>{if(e.pointerId!==id)return;const w=el.offsetWidth,h=el.offsetHeight;el.style.left=Math.min(Math.max(0,ox+e.clientX-sx),innerWidth-w)+'px';el.style.top=Math.min(Math.max(0,oy+e.clientY-sy),innerHeight-h)+'px'});
+ const end=e=>{if(e.pointerId!==id)return;id=null;YP.drag=false;const r=el.getBoundingClientRect();YP.corner=(r.top+r.height/2<innerHeight/2?'t':'b')+(r.left+r.width/2<innerWidth/2?'l':'r');try{localStorage.setItem('xzYtCorner',YP.corner)}catch(x){}placeCorner(el,true);el.dataset.k=''};
+ g.addEventListener('pointerup',end);g.addEventListener('pointercancel',end)}
 function frameLoop(){layout();YP.raf=YP.active?requestAnimationFrame(frameLoop):0}
 function startTick(){clearInterval(YP.tick);YP.tick=setInterval(()=>{try{const p=YP.player;if(!p||!YP.ready||!p.getDuration)return;const d=p.getDuration(),c=p.getCurrentTime();
   const f=document.getElementById('ytp-fill');if(f&&d>0)f.style.width=Math.min(100,c/d*100)+'%';
-  if(typeof pOpen!=='undefined'&&pOpen&&d>0&&!YP.seeking){const sk=q1('#sk'),t1=q1('#t1'),t2=q1('#t2');if(sk){sk.value=String(c/d*1000);sk.style.setProperty('--range-fill',(c/d*100)+'%')}if(t1)t1.textContent=fT(c);if(t2)t2.textContent=fT(d)}
+  if(d>0&&!YP.seeking)paintTime(c,d);
   if(YP.state===1&&c>30&&!YP.counted&&YP.track){YP.counted=true;const t=YP.track;if(T.has(t.id)&&!(t.ext&&t.ext.temp)){t.plays=(t.plays||0)+1;t.last=Date.now();try{svM(t)}catch(e){}}}}catch(e){}},400)}
 function mediaSession(t){try{if(!('mediaSession' in navigator)||!window.MediaMetadata||!t)return;const s=navigator.mediaSession,art=t.ext&&t.ext.art&&/^https:\/\//i.test(t.ext.art)?[{src:t.ext.art,sizes:'512x512'}]:[];
  s.metadata=new MediaMetadata({title:t.title||'',artist:t.artist||'',album:t.album||'',artwork:art});
@@ -6495,6 +6513,7 @@ for(const ev of['input','change']){document.addEventListener(ev,e=>{const sk=e.t
  try{const d=YP.player.getDuration();if(d>0){YP.seeking=ev==='input';YP.player.seekTo(sk.value/1000*d,true);if(ev==='change')YP.seeking=false}}catch(x){}},true)}
 {const _s=syncPlay;syncPlay=function(){if(YP.active){paintBtns();return}return _s.apply(this,arguments)}}
 
+{const _pm=ACT.pmute;ACT.pmute=function(){const r=_pm.apply(this,arguments);try{if(YP.active&&YP.player&&YP.ready){if(typeof mutedState!=='undefined'&&mutedState)YP.player.mute();else YP.player.unMute()}}catch(e){}return r}}
 /* ---------------------------------------------------------------- hook into the player */
 {const _l=load;load=async function(go){
   const t=cur();
