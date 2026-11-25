@@ -6288,8 +6288,10 @@ try{const r=document.documentElement,low=(navigator.hardwareConcurrency||8)<=4||
 #ytp.snap{transition:left .28s cubic-bezier(.2,.8,.2,1),top .28s cubic-bezier(.2,.8,.2,1),opacity .2s,transform .2s}
 .ytp-vid{border-radius:0 0 calc(16px - 1px) calc(16px - 1px);overflow:hidden}
 .ytp-vid iframe{pointer-events:none}#ytp.basic .ytp-vid iframe{pointer-events:auto}
-.ytp-tap{position:absolute;inset:0;z-index:2;cursor:pointer;touch-action:none}#ytp.basic .ytp-tap,#ytp.inp .ytp-tap{display:none}
-#ytp.inp .ytp-x{visibility:hidden}
+.ytp-tap{position:absolute;inset:0;z-index:2;cursor:pointer;touch-action:none}#ytp.basic .ytp-tap{display:none}
+#ytp.fs{left:0!important;top:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;border-radius:0;border:0;background:#000;transform:none!important;animation:none!important;display:flex;flex-direction:column}
+#ytp.fs .ytp-grip,#ytp.fs .ytp-tap,#ytp.fs .ytp-info,#ytp.fs .ytp-bar,#ytp.fs .ytp-ctl{display:none!important}
+#ytp.fs .ytp-vid{flex:1;aspect-ratio:auto;border-radius:0}#ytp.fs iframe{pointer-events:auto}
 .ytp-grip{background:transparent;padding:0 2px}.ytp-grip button{width:26px;display:grid;place-items:center;border-radius:8px}
 @media (prefers-reduced-motion:no-preference){#ytp:not([hidden]){animation:ytpin2 .26s cubic-bezier(.2,.8,.2,1)}@keyframes ytpin2{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}}
 /* v135: tiny draggable floating card; the mini player stays visible and drives the video */
@@ -6393,7 +6395,7 @@ const searchLink=t=>t?`<a class="btn g" target="_blank" rel="noopener" href="htt
 function panel(){
  let el=document.getElementById('ytp');if(el)return el;
  el=document.createElement('div');el.id='ytp';el.hidden=true;el.setAttribute('role','region');el.setAttribute('aria-label','Full song on YouTube');
- el.innerHTML=`<div class="ytp-grip" id="ytp-grip" aria-label="Drag the video"><button data-yt="open" class="ytp-x" aria-label="Open full player"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><i></i><button data-yt="close" aria-label="Close video">✕</button></div><div class="ytp-vid" id="ytp-vid"><div id="ytp-frame"></div><div class="ytp-tap" data-yt="open" role="button" aria-label="Open full player"></div></div>
+ el.innerHTML=`<div class="ytp-grip" id="ytp-grip" aria-label="Drag the video"><button data-yt="fs" class="ytp-x" aria-label="Full screen"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button><i></i><button data-yt="close" aria-label="Close video">✕</button></div><div class="ytp-vid" id="ytp-vid"><div id="ytp-frame"></div><div class="ytp-tap" role="button" aria-label="Drag to move, double-tap for full screen"></div></div>
 <div class="ytp-info"><div class="ytp-txt" data-yt="open" role="button" tabindex="0" aria-label="Open the player"><b id="ytp-t"></b><small id="ytp-s"></small></div><button class="ib" data-yt="close" aria-label="Close">✕</button></div>
 <div class="ytp-msg" id="ytp-msg" hidden></div>
 <div class="ytp-bar" id="ytp-bar"><i id="ytp-fill"></i></div>
@@ -6401,7 +6403,7 @@ function panel(){
  document.body.appendChild(el);initDrag(el);
  el.addEventListener('click',e=>{const b=e.target.closest('[data-yt]');if(!b)return;e.stopPropagation();const a=b.dataset.yt;
   if(a==='close')stop(false);else if(a==='toggle')ytToggle();else if(a==='next')next(false);else if(a==='prev')prev();else if(a==='change'||a==='paste')askLink(YP.track);
-  else if(a==='open'){try{if(cur())openP()}catch(x){}}else if(a==='key')askKey();else if(a==='retry')route(YP.track,true,{retry:true});else if(a==='host')switchHost()});
+  else if(a==='fs')ytFull();else if(a==='open'){try{if(cur())openP()}catch(x){}}else if(a==='key')askKey();else if(a==='retry')route(YP.track,true,{retry:true});else if(a==='host')switchHost()});
  return el}
 const setMsg=h=>{const m=document.getElementById('ytp-msg'),c=document.getElementById('ytp');if(c)c.classList.toggle('msg',!!h&&!/ytp-wait/.test(h));if(!m)return;if(h){m.innerHTML=h;m.hidden=false}else{m.hidden=true;m.innerHTML=''}};
 const showVideo=on=>{const v=document.getElementById('ytp-vid');if(v)v.style.display=on?'':'none'};
@@ -6409,7 +6411,7 @@ function paintBtns(){const pl=YP.state===1||YP.state===3;
  const b=document.getElementById('ytp-pp');if(b){b.innerHTML=ic(pl?'pause':'play',26);b.setAttribute('aria-label',pl?'Pause':'Play')}
  for(const x of QA('.js-play')){x.innerHTML=ic(pl?'pause':'play',x.id==='pp'?30:26);x.setAttribute('aria-label',pl?'Pause':'Play')}
  document.body.classList.toggle('go',pl)}
-function paintInfo(t){const a=document.getElementById('ytp-t'),b=document.getElementById('ytp-s');if(a)a.textContent=t?t.title:'';if(b)b.textContent=t?[t.artist,'Full song · YouTube'].filter(Boolean).join(' · '):''}
+function paintInfo(t){{const sl=document.getElementById('playerSourceLabel');if(sl&&t)sl.textContent='YouTube'}const a=document.getElementById('ytp-t'),b=document.getElementById('ytp-s');if(a)a.textContent=t?t.title:'';if(b)b.textContent=t?[t.artist,'Full song · YouTube'].filter(Boolean).join(' · '):''}
 /* The video sits exactly over the album art while the full player is open, and floats as a small card otherwise. */
 function layout(){const el=document.getElementById('ytp');if(!el||el.hidden)return;
  const ma=null;el.classList.toggle('inp',typeof pOpen!=='undefined'&&!!pOpen);
@@ -6424,31 +6426,31 @@ function initDrag(el){let sx=0,sy=0,ox=0,oy=0,id=null,mv=false,src=null;
  const down=e=>{if(e.target.closest('button'))return;id=e.pointerId;src=e.currentTarget;mv=false;sx=e.clientX;sy=e.clientY;const r=el.getBoundingClientRect();ox=r.left;oy=r.top;try{src.setPointerCapture(id)}catch(x){}};
  const move=e=>{if(e.pointerId!==id)return;if(!mv){if(Math.hypot(e.clientX-sx,e.clientY-sy)<6)return;mv=true;YP.drag=true;el.classList.remove('snap');el.classList.add('drag')}
   const w=el.offsetWidth,h=el.offsetHeight;el.style.left=Math.min(Math.max(0,ox+e.clientX-sx),innerWidth-w)+'px';el.style.top=Math.min(Math.max(0,oy+e.clientY-sy),innerHeight-h)+'px'};
- const end=e=>{if(e.pointerId!==id)return;id=null;if(!mv)return;YP.drag=false;el.classList.remove('drag');el._moved=Date.now();const r=el.getBoundingClientRect();YP.corner=(r.top+r.height/2<innerHeight/2?'t':'b')+(r.left+r.width/2<innerWidth/2?'l':'r');try{localStorage.setItem('xzYtCorner',YP.corner)}catch(x){}placeCorner(el,true);el.dataset.k=''};
+ const end=e=>{if(e.pointerId!==id)return;id=null;if(!mv){if(e.type==='pointerup'&&src&&src.classList.contains('ytp-tap')){const n=Date.now();if(n-(el._lt||0)<320){el._lt=0;ytFull()}else el._lt=n}return}YP.drag=false;el.classList.remove('drag');el._moved=Date.now();const r=el.getBoundingClientRect();YP.corner=(r.top+r.height/2<innerHeight/2?'t':'b')+(r.left+r.width/2<innerWidth/2?'l':'r');try{localStorage.setItem('xzYtCorner',YP.corner)}catch(x){}placeCorner(el,true);el.dataset.k=''};
  for(const n of [el.querySelector('#ytp-grip'),el.querySelector('.ytp-tap')]){n.addEventListener('pointerdown',down);n.addEventListener('pointermove',move);n.addEventListener('pointerup',end);n.addEventListener('pointercancel',end)}
  el.addEventListener('click',e=>{if(el._moved&&Date.now()-el._moved<350){e.stopImmediatePropagation();e.preventDefault()}},true)}
 function frameLoop(){layout();YP.raf=YP.active?requestAnimationFrame(frameLoop):0}
 function startTick(){clearInterval(YP.tick);YP.tick=setInterval(()=>{try{const p=YP.player;if(!p||!YP.ready||!p.getDuration)return;const d=p.getDuration(),c=p.getCurrentTime();
   const f=document.getElementById('ytp-fill');if(f&&d>0)f.style.width=Math.min(100,c/d*100)+'%';
-  if(d>0&&!YP.seeking)paintTime(c,d);
-  if(YP.state===1&&c>30&&!YP.counted&&YP.track){YP.counted=true;const t=YP.track;if(T.has(t.id)&&!(t.ext&&t.ext.temp)){t.plays=(t.plays||0)+1;t.last=Date.now();try{svM(t)}catch(e){}}}}catch(e){}},400)}
+  if(d>0&&!YP.seeking){YP._pt=1;try{paintTime(c,d)}finally{YP._pt=0}}try{renderLyrics()}catch(e){}
+  if(YP.state===1&&c>30&&!YP.counted&&YP.track){YP.counted=true;const t=YP.track;if(T.has(t.id)&&!(t.ext&&t.ext.temp)){t.plays=(t.plays||0)+1;t.last=Date.now();try{svM(t)}catch(e){}}}}catch(e){}},250)}
 function mediaSession(t){try{if(!('mediaSession' in navigator)||!window.MediaMetadata||!t)return;const s=navigator.mediaSession,art=t.ext&&t.ext.art&&/^https:\/\//i.test(t.ext.art)?[{src:t.ext.art,sizes:'512x512'}]:[];
  s.metadata=new MediaMetadata({title:t.title||'',artist:t.artist||'',album:t.album||'',artwork:art});
- const h=(a,f)=>{try{s.setActionHandler(a,f)}catch(e){}};h('play',()=>ytToggle(true));h('pause',()=>ytToggle(false));h('nexttrack',()=>next(false));h('previoustrack',()=>prev());h('seekto',d=>{try{YP.player.seekTo(d.seekTime,true)}catch(e){}})}catch(e){}}
+ const h=(a,f)=>{try{s.setActionHandler(a,f)}catch(e){}};h('play',()=>ytToggle(true));h('pause',()=>ytToggle(false));h('nexttrack',()=>next(false));h('previoustrack',()=>prev());h('seekto',d=>{try{YP.player.seekTo(d.seekTime,true)}catch(e){}});h('seekbackward',null);h('seekforward',null)}catch(e){}}
 function ytToggle(force){const p=YP.player;if(!p||!YP.ready)return;try{const playing=p.getPlayerState()===1;if(force===true||(force===undefined&&!playing))p.playVideo();else p.pauseVideo()}catch(e){}}
 function stop(silent){
  YP.tok++;YP.active=false;clearInterval(YP.tick);clearTimeout(YP.watch);cancelAnimationFrame(YP.raf);YP.raf=0;
  try{if(YP.player&&YP.ready)YP.player.stopVideo()}catch(e){}
  const el=document.getElementById('ytp');if(el&&!el.hidden){el.classList.add('out');setTimeout(()=>{if(!YP.active){el.hidden=true;el.classList.remove('out');layout()}},200)}
  document.documentElement.classList.remove('xz-yt');
- YP.state=-1;try{_pl=null}catch(e){}if(!silent){try{ms()}catch(e){}}try{syncPlay()}catch(e){}}
+ YP.state=-1;try{_pl=null}catch(e){}if(!silent){try{ms()}catch(e){}try{const sl=document.getElementById('playerSourceLabel'),c=cur();if(sl)sl.textContent=c&&!isLocal(c)?SRC_INFO[srcOf(c)].label:'Library'}catch(e){}}try{syncPlay()}catch(e){}}
 const hint=()=>{if(YP.basic||!YP.active||YP.state===1||YP.state===3)return;const id=YP.ids[YP.i];
  setMsg('If the video doesn’t start by itself, press play. Still nothing?<div class="ytp-acts">'+ytLink(id)+'<button class="btn g" data-yt="host">Try another way</button></div>'+diag('no start'))};
 function onState(ev){
  const st=ev.data;YP.state=st;paintBtns();
- if(st===1||st===3){clearTimeout(YP.watch);if(st===1){setMsg('');try{A.pause()}catch(e){}startTick();try{navigator.mediaSession.playbackState='playing'}catch(e){}}}
+ if(st===1||st===3){clearTimeout(YP.watch);if(st===1){setMsg('');try{A.pause()}catch(e){}startTick();setTimeout(()=>{if(YP.active&&YP.track)mediaSession(YP.track)},400);try{navigator.mediaSession.playbackState='playing'}catch(e){}}}
  else if(st===2){try{navigator.mediaSession.playbackState='paused'}catch(e){}}
- else if(st===0){if(YP.track){try{next(true)}catch(e){}}}}
+ else if(st===0){if(typeof rep!=='undefined'&&rep===1){try{YP.player.seekTo(0,true);YP.player.playVideo()}catch(e){}return}if(YP.track){try{next(true)}catch(e){}}}}
 function switchHost(){const t=YP.track;if(!t)return;YP.host=YP.host===HOSTS[0]?HOSTS[1]:HOSTS[0];YP.hostTried=true;YP.player=null;YP.ready=false;route(t,true,{keepIds:true})}
 function onError(ev){
  const code=ev&&ev.data,t=YP.track;clearTimeout(YP.watch);
@@ -6460,7 +6462,7 @@ function onError(ev){
 function buildFrame(id){
  const old=document.getElementById('ytp-frame');if(!old)return null;
  const f=document.createElement('iframe');f.id='ytp-frame';f.title='YouTube player';
- const qs=new URLSearchParams({enablejsapi:'1',playsinline:'1',rel:'0',modestbranding:'1',autoplay:'1',controls:'0',disablekb:'1',fs:'0',iv_load_policy:'3'});
+ const qs=new URLSearchParams({enablejsapi:'1',playsinline:'1',rel:'0',modestbranding:'1',autoplay:'1',controls:YP.ctl?'1':'0',disablekb:'1',iv_load_policy:'3',...(YP.startAt?{start:String(YP.startAt)}:{})});
  if(/^https?:$/.test(location.protocol)){qs.set('origin',location.origin);qs.set('widget_referrer',location.href)}
  f.src=YP.host+'/embed/'+encodeURIComponent(id)+'?'+qs;
  f.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen');f.setAttribute('allowfullscreen','');f.referrerPolicy='strict-origin-when-cross-origin';
@@ -6480,7 +6482,7 @@ async function ensurePlayer(id){
  if(!/^https?:$/.test(location.protocol)){basicEmbed(id);return}
  await loadAPI();
  if(YP.player&&YP.ready){YP.player.loadVideoById(id);return}
- const f=buildFrame(id);if(!f)throw new Error('The player card is missing.');
+ const f=buildFrame(id);YP.startAt=0;if(!f)throw new Error('The player card is missing.');
  YP.ready=false;
  YP.player=new window.YT.Player(f,{events:{onReady:()=>{YP.ready=true;try{YP.player.playVideo()}catch(e){}},onStateChange:onState,onError:onError}});
  clearTimeout(YP.watch);YP.watch=setTimeout(()=>{if(YP.active&&!YP.ready){basicEmbed(YP.ids[YP.i]||id);return;showVideo(false);setMsg('The YouTube player didn’t start. YouTube may be blocked here, or the page address wasn’t accepted.<div class="ytp-acts"><button class="btn" data-yt="host">Try another way</button>'+ytLink(YP.ids[YP.i])+'</div>'+diag('no response'))}},9000)}
@@ -6526,10 +6528,31 @@ for(const ev of['input','change']){document.addEventListener(ev,e=>{const sk=e.t
 {const _s=syncPlay;syncPlay=function(){if(YP.active){paintBtns();return}return _s.apply(this,arguments)}}
 
 {const _pm=ACT.pmute;ACT.pmute=function(){const r=_pm.apply(this,arguments);try{if(YP.active&&YP.player&&YP.ready){if(typeof mutedState!=='undefined'&&mutedState)YP.player.mute();else YP.player.unMute()}}catch(e){}return r}}
+/* v137: YouTube full screen, Next/Previous while YouTube plays, live clock for time bars and lyrics */
+function ytFull(){const el=document.getElementById('ytp');if(!el||!YP.active)return;const req=el.requestFullscreen||el.webkitRequestFullscreen;
+ if(YP.basic||!req){const id=YP.ids[YP.i];if(id)window.open('https://www.youtube.com/watch?v='+encodeURIComponent(id),'_blank','noopener');return}
+ try{const p=req.call(el);if(p&&p.catch)p.catch(()=>{})}catch(e){}}
+function fsChange(){const el=document.getElementById('ytp');if(!el)return;const on=(document.fullscreenElement||document.webkitFullscreenElement)===el;if(on===el.classList.contains('fs'))return;el.classList.toggle('fs',on);
+ if(!YP.active||YP.basic||!YP.track)return;let at=0;try{at=Math.floor(YP.player.getCurrentTime())}catch(e){}
+ YP.ctl=on;YP.startAt=at;YP.player=null;YP.ready=false;route(YP.track,true,{keepIds:true})}
+document.addEventListener('fullscreenchange',fsChange);document.addEventListener('webkitfullscreenchange',fsChange);
+{const _pt=paintTime;paintTime=function(){if(YP.active&&!YP._pt)return;return _pt.apply(this,arguments)}}
+{const _cli=currentLyricIndex;currentLyricIndex=function(lines,time){if(YP.active&&YP.ready&&YP.player){try{const c=YP.player.getCurrentTime();if(c>=0)time=c}catch(e){}}return _cli(lines,time)}}
+{const _pm=paintMeta;paintMeta=function(t){const r=_pm.apply(this,arguments);try{if(YP.active&&t&&YP.track&&t.id===YP.track.id){const s=document.getElementById('playerSourceLabel');if(s)s.textContent='YouTube'}}catch(e){}return r}}
+{const _ms=ms;ms=function(){if(YP.active&&YP.track){mediaSession(YP.track);return}return _ms.apply(this,arguments)}}
+{const _st=stepTrack;stepTrack=async function(direction,auto){
+ if(!YP.active)return _st.apply(this,arguments);
+ if(!Q.length)return false;let n=qi+direction;
+ if(direction>0){if(n>=Q.length){if(rep===2)n=0;else{if(auto)stop(false);else toast('End of queue');return false}}}
+ else if(n<0){if(rep===2)n=Q.length-1;else{toast('Beginning of queue');return false}}
+ if(n===qi||!T.has(Q[n]))return false;
+ qi=n;lyricActive=-1;const t=T.get(Q[n]);
+ if(wanted(t)){try{renderP(true);markNowPlaying();svSess()}catch(e){}route(t,true);return true}
+ stop(true);try{await load(true,0)}catch(e){}try{renderP(true);markNowPlaying();svSess();ms()}catch(e){}return true}}
 /* ---------------------------------------------------------------- hook into the player */
 {const _l=load;load=async function(go){
   const t=cur();
-  if(t&&wanted(t)){if(go)return route(t,true);return _l.apply(this,arguments)}
+  if(t&&wanted(t)){if(go)return route(t,true).then(()=>true);return _l.apply(this,arguments)}
   if(YP.active)stop(true);
   return _l.apply(this,arguments)}}
 {const _t=toggle;toggle=function(){const t=cur();
