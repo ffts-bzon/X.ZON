@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5efe3"><meta name="color-scheme" content="light dark"><meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'"><meta name="referrer" content="strict-origin"><link rel="preconnect" href="https://api.audius.co" crossorigin><link rel="preconnect" href="https://api.jamendo.com" crossorigin><link rel="dns-prefetch" href="https://api.deezer.com"><meta name="description" content="X.ZON — your personal offline music library and player."><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="X.ZON"><title>X.ZON</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icons/icon.svg"><link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="application-name" content="X.ZON"><meta name="format-detection" content="telephone=no"><script id="xzon-pwa">/* PWA: register the offline shell (https or localhost only; failure never affects playback) */if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){window.addEventListener('load',function(){try{navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(function(){})}catch(e){}})}</script>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f5efe3"><meta name="color-scheme" content="light dark"><meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'; form-action 'none'; frame-src https://www.youtube-nocookie.com https://www.youtube.com"><meta name="referrer" content="strict-origin"><link rel="preconnect" href="https://api.audius.co" crossorigin><link rel="preconnect" href="https://api.jamendo.com" crossorigin><link rel="dns-prefetch" href="https://api.deezer.com"><meta name="description" content="X.ZON — your personal offline music library and player."><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="X.ZON"><title>X.ZON</title><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="icons/icon.svg"><link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="application-name" content="X.ZON"><meta name="format-detection" content="telephone=no"><script id="xzon-pwa">/* PWA: register the offline shell (https or localhost only; failure never affects playback) */if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')){window.addEventListener('load',function(){try{navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(function(){})}catch(e){}})}</script>
 <style>
 :root{--bg:#f5efe3;--sf:#fffaf0;--tx:#2a2622;--mu:#85807a;--ln:rgba(0,0,0,.07);--ac:#6f7f5a;--sc:rgba(60,50,40,.18);--sa:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{height:100%;margin:0}
@@ -1171,7 +1171,7 @@ function makeResult(f,src,fromLibrary){
  const pid=f.pid!=null?String(f.pid):'',title=clipText(f.title,500).trim();
  if(!pid||pid.length>1024||!title||!SRC_INFO[src])return null;
  const dur=Number(f.dur);
- if(!fromLibrary&&SEARCH_CFG.hideOnlineMaxSec>0&&Number.isFinite(dur)&&dur>0&&dur<=SEARCH_CFG.hideOnlineMaxSec)return null;
+ if(Number.isFinite(dur)&&xzShort({dur}))return null;   /* v133: same rule for library and online results */
  return{key:src+':'+pid,id:trackIdFor(src,pid),src,srcLabel:SRC_INFO[src].label,pid,title,artist:clipText(f.artist,500),album:clipText(f.album,500),genre:clipText(f.genre,200),
   dur:Number.isFinite(dur)&&dur>0?dur:0,art:httpsOnly(f.art),ext:plainObj(f.ext),playable:SRC_INFO[src].playable,
   fromLibrary:!!fromLibrary,inLibrary:!!fromLibrary,libraryId:fromLibrary?f.id:null,foundOnline:false,dupGroup:null,score:0}}
@@ -2614,7 +2614,9 @@ return`<h1>Statistics</h1><div class="chips">${[['today','Today'],['week','This 
 /* ---------- views ---------- */
 const row=(t,k,i,x='')=>{const meta=[t.artist,t.album].filter(v=>v&&v!=='Unknown artist'&&v!=='Unknown album'&&v!=='Unknown').join(' · '),sub=[t.na?(NA_LABEL[t.na]||'Unavailable'):'',meta,fT(t.dur),!t.na&&dlIsDl(t)&&dlHasFile(t)?'↓ Downloaded':''].filter(Boolean).join(' · ');return`<div class="row${t.na?' na':''}${cur()&&cur().id==t.id?' on':''}${selMode&&sel.has(t.id)?' picked':''}" data-id="${H(t.id)}" data-l="${k}" data-i="${i}"><div class="art" style="${tint(t)}">${lt(t)}</div><div class="rm" data-act="play" role="button" tabindex="0" aria-label="Play ${H(t.title)}"><b>${H(t.title)}</b><small>${t.fav?'♥ ':''}${H(sub)}</small></div><span class="nb"><i></i><i></i><i></i></span>${x||(selMode?`<input type="checkbox" data-act="sel" ${sel.has(t.id)?'checked':''}>`:`<button class="ib" data-act="more" aria-label="More">${ic('dots')}</button>`)}</div>`};
 const lst=(a,k,x)=>{LS[k]=a;return a.map((t,i)=>row(t,k,i,x?x(t,i,a.length):'')).join('')};
-const all_=()=>[...T.values()].filter(t=>!(t.ext&&t.ext.temp));   /* v72: session-only online tracks (queued search results that have not played yet) are not library songs */
+const xzMinSec=()=>{const m=ST.minSec;return m===undefined||m===null?45:(+m||0)};   /* v133: songs of 0 < length <= this many seconds are hidden (0 = off). Unknown length (0) is never hidden: radio streams have none. */
+const xzShort=t=>{const m=xzMinSec();if(!(m>0)||!t)return false;const d=+t.dur;return d>0&&d<=m};
+const all_=()=>[...T.values()].filter(t=>!(t.ext&&t.ext.temp)&&!xzShort(t));   /* v72: session-only online tracks (queued search results that have not played yet) are not library songs */
 const AUTO={rp:['Recently played',()=>all_().filter(t=>t.last).sort((a,b)=>b.last-a.last)],ra:['Recently added',()=>all_().sort((a,b)=>b.added-a.added)],mp:['Most played',()=>all_().filter(t=>t.plays).sort((a,b)=>b.plays-a.plays)],fv:['Favourites',()=>all_().filter(t=>t.fav)]};
 const tile=(t,k,i)=>{const meta=[t.artist,t.album].filter(v=>v&&v!=='Unknown artist'&&v!=='Unknown album'&&v!=='Unknown').join(' · ');return`<div class="tile" role="button" tabindex="0" aria-label="Play ${H(t.title)}" data-id="${H(t.id)}" data-l="${k}" data-i="${i}" data-act="play"><div class="art" style="${tint(t)}">${lt(t)}</div><b>${H(t.title)}</b>${meta?`<small>${H(meta)}</small>`:''}</div>`};
 function homeSearchBtn(label,query,sub=''){
@@ -2928,7 +2930,7 @@ function olPaint(kind,out){const el=$('#ol');if(!el)return;const q=OL.q,head='<h
  const msg=out.state==='offline'?"You're offline. Online music search needs a connection.":why;
  el.innerHTML=head+`<p class="mu ol-msg" role="alert">${H(msg)}</p><small class="ol-credit" style="display:block;margin-top:5px">${providerLine}</small><button class="btn g ol-retry" data-act="olRetry">Try again</button>`}
 async function olRun(q){const tok=++OL.tok;OL.pending=true;let r;
- try{r=await OLS.run(q,{sources:[SRC.AUDIUS,SRC.JAMENDO],onPartial:pp=>{if(tok!==OL.tok||!olEligible()||normalizeQuery(lib.q)!==q)return;OL.out=pp;OL.at=Date.now();olPaint('final',pp);try{warmTopResults(olList(pp))}catch(e){}}})}catch(e){r={state:'error',message:'Online music search failed',results:[],sources:{}}}
+ try{r=await OLS.run(q,{sources:[SRC.AUDIUS,SRC.JAMENDO].concat(ST.ytAuto!==false?[SRC.ITUNES,SRC.DEEZER].filter(Boolean):[]),onPartial:pp=>{if(tok!==OL.tok||!olEligible()||normalizeQuery(lib.q)!==q)return;OL.out=pp;OL.at=Date.now();olPaint('final',pp);try{warmTopResults(olList(pp))}catch(e){}}})}catch(e){r={state:'error',message:'Online music search failed',results:[],sources:{}}}
  if(tok!==OL.tok||r.stale)return;      /* a newer search owns the screen */
  OL.pending=false;
  if(!olEligible()||normalizeQuery(lib.q)!==q)return;
@@ -6258,6 +6260,340 @@ try{const r=document.documentElement,low=(navigator.hardwareConcurrency||8)<=4||
 })();
 </script>
 
+<style id="xzon-v133">
+/* v133: YouTube full-song card + small additions */
+#ytp{position:fixed;z-index:1100;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100vw - 24px));background:var(--sf);color:var(--tx);border:1px solid var(--ln);border-radius:20px;box-shadow:0 18px 48px var(--sc);overflow:hidden}
+#ytp[hidden]{display:none}
+.ytp-vid{position:relative;aspect-ratio:16/9;background:#000}
+.ytp-vid #ytp-frame,.ytp-vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.ytp-info{display:flex;align-items:center;gap:8px;padding:10px 8px 2px 14px}
+.ytp-txt{flex:1;min-width:0}
+.ytp-txt b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ytp-txt small{display:block;color:var(--mu);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ytp-msg{padding:6px 14px 4px;font-size:13px;line-height:1.4;color:var(--tx)}
+.ytp-msg .ytp-wait{color:var(--mu)}
+.ytp-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ytp-acts .btn{font-size:12.5px;padding:8px 12px;text-decoration:none}
+.ytp-bar{height:3px;margin:8px 14px 0;background:var(--ln);border-radius:3px;overflow:hidden}
+.ytp-bar i{display:block;height:100%;width:0;background:var(--ac)}
+.ytp-ctl{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 10px 12px;position:relative}
+.ytp-ctl .ytp-pp{width:52px;height:52px;border-radius:50%;background:var(--ac);color:#fff}
+.ytp-link{position:absolute;right:12px;background:none;border:0;color:var(--mu);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer;padding:8px}
+.yt-pop{margin-bottom:6px}
+.ytp-setup{display:block;margin:8px 0 2px;padding:9px 12px;border-radius:12px;border:1px dashed var(--ln);background:none;color:var(--ac);font:inherit;font-size:12.5px;text-align:left;cursor:pointer}
+html.xz-yt #mini{display:none!important}
+@media (max-width:759px){#ytp{left:12px;right:12px;width:auto;bottom:calc(88px + env(safe-area-inset-bottom,0px))}}
+@media (prefers-reduced-motion:no-preference){#ytp:not([hidden]){animation:ytpin .22s ease-out}@keyframes ytpin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}}
+/* v134: video docked onto the album art in the full player, diagnostics */
+#ytp.docked{display:flex;flex-direction:column;box-shadow:none;border:0;background:#000}
+#ytp.docked .ytp-info,#ytp.docked .ytp-bar,#ytp.docked .ytp-ctl{display:none}
+#ytp.docked .ytp-vid{flex:1;aspect-ratio:auto;min-height:0}
+#ytp.docked .ytp-msg{flex:1;overflow:auto;background:var(--sf)}
+.ytp-txt{cursor:pointer}
+.ytp-diag{display:block;margin-top:8px;font-size:11px;color:var(--mu);opacity:.85}
+.ytp-msg a.btn{text-decoration:none}
+</style>
+<script id="xzon-v133-js">
+/* X.ZON v133: (1) hide songs of 45 seconds or less (setting), (2) "Play full song" through YouTube.
+   YouTube is the official embedded player only. It cannot go through the equalizer or crossfade, and it is controlled
+   from the small player card below. Songs are found with the optional free YouTube Data API key, or by pasting a link once. */
+(function(){
+'use strict';
+const q1=s=>document.querySelector(s);
+const esc=s=>H(s);
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+
+/* ---------------------------------------------------------------- settings helpers */
+const MEM={key:'',map:null};
+const ytKey=()=>String(lsGet('xzon.ytkey')||MEM.key||'').trim();
+const setYtKey=v=>{v=String(v||'').trim();MEM.key=v;if(v)lsSet('xzon.ytkey',v);else{try{localStorage.removeItem('xzon.ytkey')}catch(e){}}};
+const ytAuto=()=>ST.ytAuto!==false;
+const mapGet=()=>{try{const t=lsGet('xzon.ytmap');return t?(JSON.parse(t)||{}):(MEM.map||{})}catch(e){return MEM.map||{}}};
+const mapPut=(k,v)=>{const m=Object.assign({},mapGet());if(v)m[k]=v;else delete m[k];const ks=Object.keys(m);if(ks.length>3000)ks.slice(0,ks.length-3000).forEach(x=>delete m[x]);MEM.map=m;lsSet('xzon.ytmap',JSON.stringify(m))};
+const tKey=t=>trackKey(t);
+const isPreviewTrack=t=>!!(t&&t.ext&&t.ext.preview);
+/* Routed through YouTube: catalog songs that only have a 30-second preview, and any song you matched to a video yourself. */
+const wanted=t=>!!t&&!isLocal(t)&&ytAuto()&&(isPreviewTrack(t)||!!mapGet()[tKey(t)]);
+
+/* ---------------------------------------------------------------- finding the video */
+function parseYT(input){
+ const raw=String(input||'').trim();if(/^[\w-]{11}$/.test(raw))return raw;
+ const m=raw.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^\s#]*?&)?v=|embed\/|shorts\/|live\/|v\/))([\w-]{11})/i);
+ if(m)return m[1];
+ const m2=raw.match(/[?&]v=([\w-]{11})/);return m2?m2[1]:''}
+const isoSec=d=>{const m=String(d||'').match(/^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/);return m?((+m[1]||0)*86400+(+m[2]||0)*3600+(+m[3]||0)*60+(+m[4]||0)):0};
+const nrm=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/&/g,' and ').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+const BAD=/\b(live|cover|remix|karaoke|instrumental|sped up|slowed|reverb|8d|nightcore|reaction|tutorial|lesson|piano version|acoustic|mashup|bass boosted|loop|1 hour|10 hours)\b/;
+async function ytApiError(r){
+ let reason='',msg='';try{const j=await r.json();reason=(j.error&&j.error.errors&&j.error.errors[0]&&j.error.errors[0].reason)||'';msg=(j.error&&j.error.message)||''}catch(e){}
+ const say={quotaExceeded:'Today’s free YouTube search limit is used up. Paste a link, or try again tomorrow.',dailyLimitExceeded:'Today’s free YouTube search limit is used up. Paste a link, or try again tomorrow.',rateLimitExceeded:'YouTube is being asked too fast. Try again in a minute.',keyInvalid:'The YouTube key isn’t valid. Check it was copied completely.',badRequest:'The YouTube key isn’t valid. Check it was copied completely.',accessNotConfigured:'Turn on “YouTube Data API v3” for the project this key belongs to.',ipRefererBlocked:'This key is restricted to other website addresses. Allow '+location.origin+'/* in the key’s settings, or remove the restriction.',forbidden:'YouTube refused this key.'};
+ const e=new Error((say[reason]||(msg&&msg.length<160?msg:'YouTube search failed.'))+' (HTTP '+r.status+(reason?' · '+reason:'')+')');e.status=r.status;e.detail=msg;return e}
+async function testKey(key){
+ const c=new AbortController(),to=setTimeout(()=>c.abort(),9000);
+ try{const r=await fetch('https://www.googleapis.com/youtube/v3/videos?'+new URLSearchParams({part:'id',id:'dQw4w9WgXcQ',key}),{signal:c.signal});
+  if(r.ok)return{ok:true,msg:'Key works.'};return{ok:false,msg:(await ytApiError(r)).message}}
+ catch(e){return{ok:false,msg:e&&e.name==='AbortError'?'No answer from YouTube. Check your connection.':'Couldn’t reach YouTube. Check your connection.'}}
+ finally{clearTimeout(to)}}
+async function apiSearch(t,signal){
+ const key=ytKey();if(!key)return null;
+ const artist=t.artist&&!/^unknown/i.test(t.artist)?t.artist:'';
+ const base={part:'snippet',type:'video',videoEmbeddable:'true',maxResults:'8',q:[artist,t.title].filter(Boolean).join(' '),key};
+ let items=[];
+ for(const extra of[{videoSyndicated:'true',videoCategoryId:'10'},{}]){
+  const r=await fetch('https://www.googleapis.com/youtube/v3/search?'+new URLSearchParams(Object.assign({},base,extra)),{signal});
+  if(!r.ok)throw await ytApiError(r);
+  const j=await r.json();items=(j.items||[]).filter(x=>x.id&&x.id.videoId);if(items.length)break}
+ if(!items.length)return[];
+ const durs={},ok={};
+ try{const r2=await fetch('https://www.googleapis.com/youtube/v3/videos?'+new URLSearchParams({part:'contentDetails,status',id:items.map(x=>x.id.videoId).join(','),key}),{signal});
+  if(r2.ok){const j2=await r2.json();for(const v of j2.items||[]){durs[v.id]=isoSec(v.contentDetails&&v.contentDetails.duration);ok[v.id]=!v.status||v.status.embeddable!==false}}}catch(e){}
+ const nt=nrm(t.title),na=nrm(artist),own=nrm(t.title+' '+t.album);
+ const scored=items.map(x=>{const id=x.id.videoId,sn=x.snippet||{},ti=nrm(sn.title),ch=nrm(sn.channelTitle);let sc=0;
+  if(ok[id]===false)return null;
+  if(nt&&ti.includes(nt))sc+=30;if(na&&(ti.includes(na)||ch.includes(na)))sc+=20;
+  if(/topic$/.test(ch))sc+=25;if(/official audio|official music video|official video/.test(ti))sc+=10;if(/vevo/.test(ch))sc+=8;
+  const bad=ti.match(BAD);if(bad&&!own.includes(bad[0]))sc-=45;
+  const d=durs[id]||0;if(t.dur>0&&d>0){const df=Math.abs(d-t.dur);sc+=df<=3?40:df<=8?20:df>25?-50:-10}
+  return{id,sc}}).filter(Boolean).sort((a,b)=>b.sc-a.sc);
+ return scored.map(x=>x.id)}
+
+/* ---------------------------------------------------------------- YouTube player */
+const YP={tok:0,active:false,track:null,ids:[],i:0,player:null,ready:false,api:null,tick:0,state:-1,host:'https://www.youtube.com',hostTried:false,raf:0,watch:0,lastErr:0};
+const HOSTS=['https://www.youtube.com','https://www.youtube-nocookie.com'];
+function loadAPI(){
+ if(window.YT&&window.YT.Player)return Promise.resolve();
+ if(YP.api)return YP.api;
+ YP.api=new Promise((res,rej)=>{const to=setTimeout(()=>{YP.api=null;rej(new Error('YouTube took too long to load. It may be blocked on this network.'))},12000);
+  window.onYouTubeIframeAPIReady=()=>{clearTimeout(to);res()};
+  const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';sc.async=true;
+  sc.onerror=()=>{clearTimeout(to);YP.api=null;rej(new Error('YouTube could not be loaded. Check your connection.'))};document.head.appendChild(sc)});
+ return YP.api}
+const mode=()=>{try{return (navigator.standalone||matchMedia('(display-mode: standalone)').matches)?'home-screen app':'browser'}catch(e){return'browser'}};
+const diag=extra=>'<small class="ytp-diag">'+esc([extra,mode(),YP.host.replace('https://www.','').replace('.com',''),location.protocol==='https:'?'https':location.protocol].filter(Boolean).join(' · '))+'</small>';
+const ytLink=id=>id?`<a class="btn g" target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=${encodeURIComponent(id)}">Open in YouTube</a>`:'';
+const searchLink=t=>t?`<a class="btn g" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${encodeURIComponent([t.artist,t.title].filter(Boolean).join(' '))}">Search on YouTube</a>`:'';
+function panel(){
+ let el=document.getElementById('ytp');if(el)return el;
+ el=document.createElement('div');el.id='ytp';el.hidden=true;el.setAttribute('role','region');el.setAttribute('aria-label','Full song on YouTube');
+ el.innerHTML=`<div class="ytp-vid" id="ytp-vid"><div id="ytp-frame"></div></div>
+<div class="ytp-info"><div class="ytp-txt" data-yt="open" role="button" tabindex="0" aria-label="Open the player"><b id="ytp-t"></b><small id="ytp-s"></small></div><button class="ib" data-yt="close" aria-label="Close">✕</button></div>
+<div class="ytp-msg" id="ytp-msg" hidden></div>
+<div class="ytp-bar" id="ytp-bar"><i id="ytp-fill"></i></div>
+<div class="ytp-ctl"><button class="ib" data-yt="prev" aria-label="Previous">${ic('prev',22)}</button><button class="ib ytp-pp" data-yt="toggle" id="ytp-pp" aria-label="Play">${ic('play',26)}</button><button class="ib" data-yt="next" aria-label="Next">${ic('next',22)}</button><button class="ytp-link" data-yt="change">Change video</button></div>`;
+ document.body.appendChild(el);
+ el.addEventListener('click',e=>{const b=e.target.closest('[data-yt]');if(!b)return;e.stopPropagation();const a=b.dataset.yt;
+  if(a==='close')stop(false);else if(a==='toggle')ytToggle();else if(a==='next')next(false);else if(a==='prev')prev();else if(a==='change'||a==='paste')askLink(YP.track);
+  else if(a==='open'){try{if(cur())openP()}catch(x){}}else if(a==='key')askKey();else if(a==='retry')route(YP.track,true,{retry:true});else if(a==='host')switchHost()});
+ return el}
+const setMsg=h=>{const m=document.getElementById('ytp-msg');if(!m)return;if(h){m.innerHTML=h;m.hidden=false}else{m.hidden=true;m.innerHTML=''}};
+const showVideo=on=>{const v=document.getElementById('ytp-vid');if(v)v.style.display=on?'':'none'};
+function paintBtns(){const pl=YP.state===1||YP.state===3;
+ const b=document.getElementById('ytp-pp');if(b){b.innerHTML=ic(pl?'pause':'play',26);b.setAttribute('aria-label',pl?'Pause':'Play')}
+ for(const x of QA('.js-play')){x.innerHTML=ic(pl?'pause':'play',x.id==='pp'?30:26);x.setAttribute('aria-label',pl?'Pause':'Play')}
+ document.body.classList.toggle('go',pl)}
+function paintInfo(t){const a=document.getElementById('ytp-t'),b=document.getElementById('ytp-s');if(a)a.textContent=t?t.title:'';if(b)b.textContent=t?[t.artist,'Full song · YouTube'].filter(Boolean).join(' · '):''}
+/* The video sits exactly over the album art while the full player is open, and floats as a small card otherwise. */
+function layout(){const el=document.getElementById('ytp');if(!el||el.hidden)return;
+ const ma=(typeof pOpen!=='undefined'&&pOpen)?q1('#pl #ma'):null;
+ if(ma){const r=ma.getBoundingClientRect();if(r.width>60&&r.height>60){el.classList.add('docked');const s=el.style;s.left=r.left+'px';s.top=r.top+'px';s.width=r.width+'px';s.height=r.height+'px';s.right='auto';s.bottom='auto';s.borderRadius=getComputedStyle(ma).borderRadius||'20px';return}}
+ if(el.classList.contains('docked')){el.classList.remove('docked');const s=el.style;s.left=s.top=s.width=s.height=s.right=s.bottom=s.borderRadius=''}}
+function frameLoop(){layout();YP.raf=YP.active?requestAnimationFrame(frameLoop):0}
+function startTick(){clearInterval(YP.tick);YP.tick=setInterval(()=>{try{const p=YP.player;if(!p||!YP.ready||!p.getDuration)return;const d=p.getDuration(),c=p.getCurrentTime();
+  const f=document.getElementById('ytp-fill');if(f&&d>0)f.style.width=Math.min(100,c/d*100)+'%';
+  if(typeof pOpen!=='undefined'&&pOpen&&d>0&&!YP.seeking){const sk=q1('#sk'),t1=q1('#t1'),t2=q1('#t2');if(sk){sk.value=String(c/d*1000);sk.style.setProperty('--range-fill',(c/d*100)+'%')}if(t1)t1.textContent=fT(c);if(t2)t2.textContent=fT(d)}
+  if(YP.state===1&&c>30&&!YP.counted&&YP.track){YP.counted=true;const t=YP.track;if(T.has(t.id)&&!(t.ext&&t.ext.temp)){t.plays=(t.plays||0)+1;t.last=Date.now();try{svM(t)}catch(e){}}}}catch(e){}},400)}
+function mediaSession(t){try{if(!('mediaSession' in navigator)||!window.MediaMetadata||!t)return;const s=navigator.mediaSession,art=t.ext&&t.ext.art&&/^https:\/\//i.test(t.ext.art)?[{src:t.ext.art,sizes:'512x512'}]:[];
+ s.metadata=new MediaMetadata({title:t.title||'',artist:t.artist||'',album:t.album||'',artwork:art});
+ const h=(a,f)=>{try{s.setActionHandler(a,f)}catch(e){}};h('play',()=>ytToggle(true));h('pause',()=>ytToggle(false));h('nexttrack',()=>next(false));h('previoustrack',()=>prev());h('seekto',d=>{try{YP.player.seekTo(d.seekTime,true)}catch(e){}})}catch(e){}}
+function ytToggle(force){const p=YP.player;if(!p||!YP.ready)return;try{const playing=p.getPlayerState()===1;if(force===true||(force===undefined&&!playing))p.playVideo();else p.pauseVideo()}catch(e){}}
+function stop(silent){
+ YP.tok++;YP.active=false;clearInterval(YP.tick);clearTimeout(YP.watch);cancelAnimationFrame(YP.raf);YP.raf=0;
+ try{if(YP.player&&YP.ready)YP.player.stopVideo()}catch(e){}
+ const el=document.getElementById('ytp');if(el){el.hidden=true;layout()}
+ document.documentElement.classList.remove('xz-yt');
+ YP.state=-1;try{_pl=null}catch(e){}if(!silent){try{ms()}catch(e){}}try{syncPlay()}catch(e){}}
+const hint=()=>{if(YP.basic||!YP.active||YP.state===1||YP.state===3)return;const id=YP.ids[YP.i];
+ setMsg('If the video doesn’t start by itself, tap its play button. Still nothing?<div class="ytp-acts">'+ytLink(id)+'<button class="btn g" data-yt="host">Try another way</button></div>'+diag('no start'))};
+function onState(ev){
+ const st=ev.data;YP.state=st;paintBtns();
+ if(st===1||st===3){clearTimeout(YP.watch);if(st===1){setMsg('');try{A.pause()}catch(e){}startTick();try{navigator.mediaSession.playbackState='playing'}catch(e){}}}
+ else if(st===2){try{navigator.mediaSession.playbackState='paused'}catch(e){}}
+ else if(st===0){if(YP.track){try{next(true)}catch(e){}}}}
+function switchHost(){const t=YP.track;if(!t)return;YP.host=YP.host===HOSTS[0]?HOSTS[1]:HOSTS[0];YP.hostTried=true;YP.player=null;YP.ready=false;route(t,true,{keepIds:true})}
+function onError(ev){
+ const code=ev&&ev.data,t=YP.track;clearTimeout(YP.watch);
+ if(code===153&&!YP.hostTried){YP.hostTried=true;YP.host=YP.host===HOSTS[0]?HOSTS[1]:HOSTS[0];YP.player=null;YP.ready=false;route(t,true,{keepIds:true});return}
+ if(code!==153&&YP.i+1<YP.ids.length){YP.i++;try{YP.player.loadVideoById(YP.ids[YP.i])}catch(e){}return}
+ const why=code===101||code===150?'The owner of this video doesn’t allow it to be played inside other apps.':code===100?'This video is no longer available.':code===153?'YouTube refused to play here because it didn’t get this page’s address.':code===2?'YouTube says this video link is invalid.':'This video can’t be played here.';
+ const id=YP.ids[YP.i];showVideo(false);YP.state=-1;paintBtns();
+ setMsg(`${esc(why)}<div class="ytp-acts"><button class="btn" data-yt="paste">Paste a different link</button>${ytLink(id)}${searchLink(t)}${ytKey()?'':'<button class="btn g" data-yt="key">Add a YouTube key</button>'}</div>${diag('error '+code)}`)}
+function buildFrame(id){
+ const old=document.getElementById('ytp-frame');if(!old)return null;
+ const f=document.createElement('iframe');f.id='ytp-frame';f.title='YouTube player';
+ const qs=new URLSearchParams({enablejsapi:'1',playsinline:'1',rel:'0',modestbranding:'1',autoplay:'1'});
+ if(/^https?:$/.test(location.protocol)){qs.set('origin',location.origin);qs.set('widget_referrer',location.href)}
+ f.src=YP.host+'/embed/'+encodeURIComponent(id)+'?'+qs;
+ f.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen');f.setAttribute('allowfullscreen','');f.referrerPolicy='strict-origin-when-cross-origin';
+ old.replaceWith(f);return f}
+function basicEmbed(id){
+ const old=document.getElementById('ytp-frame');if(!old||!id)return;
+ clearTimeout(YP.watch);clearTimeout(YP.hintT);YP.basic=true;YP.player=null;YP.ready=false;
+ const f=document.createElement('iframe');f.id='ytp-frame';f.title='YouTube player';
+ f.src=YP.host+'/embed/'+encodeURIComponent(id)+'?autoplay=1&playsinline=1&rel=0&modestbranding=1';
+ f.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen');f.setAttribute('allowfullscreen','');f.referrerPolicy='strict-origin-when-cross-origin';
+ old.replaceWith(f);showVideo(true);YP.state=1;paintBtns();
+ const framed=(()=>{try{return window.self!==window.top}catch(e){return true}})(),web=/^https?:$/.test(location.protocol);
+ const own=web?'<a class="btn g" target="_blank" rel="noopener" href="'+esc(location.href.split('#')[0])+'">Open X.ZON in its own tab</a>':'';
+ setMsg('Error 153 inside the video means YouTube blocks this page because it runs inside '+(framed||!web?'a preview frame (not a real web address)':'a restricted view')+'. Playing it on YouTube always works.<div class="ytp-acts">'+ytLink(id)+own+'<button class="btn g" data-yt="host">Try another way</button></div>'+diag('basic'+(framed?' · framed':'')))}
+async function ensurePlayer(id){
+ YP.basic=false;
+ if(!/^https?:$/.test(location.protocol)){basicEmbed(id);return}
+ await loadAPI();
+ if(YP.player&&YP.ready){YP.player.loadVideoById(id);return}
+ const f=buildFrame(id);if(!f)throw new Error('The player card is missing.');
+ YP.ready=false;
+ YP.player=new window.YT.Player(f,{events:{onReady:()=>{YP.ready=true;try{YP.player.playVideo()}catch(e){}},onStateChange:onState,onError:onError}});
+ clearTimeout(YP.watch);YP.watch=setTimeout(()=>{if(YP.active&&!YP.ready){basicEmbed(YP.ids[YP.i]||id);return;showVideo(false);setMsg('The YouTube player didn’t start. YouTube may be blocked here, or the page address wasn’t accepted.<div class="ytp-acts"><button class="btn" data-yt="host">Try another way</button>'+ytLink(YP.ids[YP.i])+'</div>'+diag('no response'))}},9000)}
+async function route(t,go,opt){
+ opt=opt||{};if(!t)return;
+ const tok=++YP.tok;
+ if(!YP.track||YP.track.id!==t.id){YP.hostTried=false}
+ YP.track=t;YP.counted=false;YP.active=true;YP.state=-1;
+ try{A.pause()}catch(e){}
+ const el=panel();el.hidden=false;document.documentElement.classList.add('xz-yt');
+ paintInfo(t);showVideo(true);paintBtns();const f=document.getElementById('ytp-fill');if(f)f.style.width='0%';
+ if(!YP.raf)YP.raf=requestAnimationFrame(frameLoop);
+ setMsg('<span class="ytp-wait">Finding the full song on YouTube…</span>');mediaSession(t);
+ let ids=[];const saved=mapGet()[tKey(t)];
+ if(opt.keepIds&&YP.ids.length)ids=YP.ids.slice();
+ else if(saved&&!opt.retry)ids=[saved];
+ else if(ytKey()){
+  try{const c=new AbortController();setTimeout(()=>c.abort(),9000);ids=await apiSearch(t,c.signal)||[]}
+  catch(e){if(tok!==YP.tok)return;showVideo(false);setMsg(`${esc(e&&e.name==='AbortError'?'YouTube search took too long.':(e&&e.message)||'YouTube search failed.')}<div class="ytp-acts"><button class="btn" data-yt="retry">Try again</button><button class="btn g" data-yt="paste">Paste a link instead</button><button class="btn g" data-yt="key">Change key</button></div>`);return}
+ }
+ if(tok!==YP.tok)return;
+ if(!ids.length){showVideo(false);
+  setMsg(ytKey()?`No playable match was found on YouTube.<div class="ytp-acts"><button class="btn" data-yt="paste">Paste a link</button>${searchLink(t)}</div>`
+   :`To play this full song, X.ZON needs its YouTube link. Search YouTube, copy the link of the right video, and paste it here. X.ZON remembers it.<div class="ytp-acts">${searchLink(t)}<button class="btn" data-yt="paste">Paste link</button><button class="btn g" data-yt="key">Set up automatic search</button></div>`);
+  return}
+ YP.ids=ids;if(!opt.keepIds)YP.i=0;
+ if(!saved&&ids[0])mapPut(tKey(t),ids[0]);
+ try{await ensurePlayer(ids[YP.i]||ids[0]);if(tok!==YP.tok)return;if(YP.basic)return;showVideo(true);setMsg('<span class="ytp-wait">Starting…</span>');clearTimeout(YP.hintT);YP.hintT=setTimeout(hint,6000)}
+ catch(e){if(tok!==YP.tok)return;showVideo(false);setMsg(`${esc((e&&e.message)||'YouTube could not be loaded.')}<div class="ytp-acts"><button class="btn" data-yt="retry">Try again</button>${ytLink(ids[0])}</div>${diag('load')}`)}}
+async function askLink(t){
+ if(!t)return;
+ const v=await ask({title:'YouTube link',msg:'Paste the link of the right video for “'+t.title+'”. X.ZON remembers it for next time.',fields:[{label:'Link'}],ok:'Use this video'});
+ if(!v)return;const id=parseYT(v[0]);
+ if(!id){toast('That doesn’t look like a YouTube link');return}
+ mapPut(tKey(t),id);YP.ids=[];route(t,true)}
+function askKey(){
+ try{if(typeof pOpen!=='undefined'&&pOpen)closeP()}catch(e){}
+ try{go('settings')}catch(e){}
+ setTimeout(()=>{const h=document.getElementById('xz-conn');if(h){h.scrollIntoView({block:'start'});const i=document.getElementById('yt-key-in');if(i)i.focus({preventScroll:true})}},300)}
+/* the full player's seek bar and play button drive the video while it is on screen */
+for(const ev of['input','change']){document.addEventListener(ev,e=>{const sk=e.target;if(!YP.active||!sk||sk.id!=='sk')return;e.stopImmediatePropagation();
+ try{const d=YP.player.getDuration();if(d>0){YP.seeking=ev==='input';YP.player.seekTo(sk.value/1000*d,true);if(ev==='change')YP.seeking=false}}catch(x){}},true)}
+{const _s=syncPlay;syncPlay=function(){if(YP.active){paintBtns();return}return _s.apply(this,arguments)}}
+
+/* ---------------------------------------------------------------- hook into the player */
+{const _l=load;load=async function(go){
+  const t=cur();
+  if(t&&wanted(t)){if(go)return route(t,true);return _l.apply(this,arguments)}
+  if(YP.active)stop(true);
+  return _l.apply(this,arguments)}}
+{const _t=toggle;toggle=function(){const t=cur();
+  if(YP.active&&YP.track&&t&&YP.track.id===t.id){ytToggle();return}
+  if(t&&wanted(t)&&Q.length){route(t,true);return}
+  return _t.apply(this,arguments)};
+ ACT.ptoggle=function(){return toggle.apply(this,arguments)}}
+
+/* ---------------------------------------------------------------- menu: play any online song on YouTube */
+{const _m=ACT.more;ACT.more=function(e,id){_m.apply(this,arguments);try{const t=T.get(id),sb=q1('#layer .sb');if(!t||!sb||isLocal(t)||sb.querySelector('[data-act="m_yt"]'))return;
+  if(![SRC.ITUNES,SRC.DEEZER,SRC.SPOTIFY].includes(srcOf(t))&&!mapGet()[tKey(t)])return;
+  const a=sb.querySelector('[data-act="m_info"]');if(!a)return;a.insertAdjacentHTML('afterend','<button data-act="m_yt">Play full song (YouTube)</button><button data-act="m_ytlink">Set YouTube link…</button>')}catch(x){}}}
+ACT.m_yt=(e,id)=>{shx();const t=T.get(id);if(t)setTimeout(()=>route(t,true),60)};
+ACT.m_ytlink=(e,id)=>{shx();const t=T.get(id);if(t)setTimeout(()=>askLink(t),60)};
+
+/* ---------------------------------------------------------------- catalog sources (re-enabled: an earlier version removed them because they only had previews) */
+function jsonp(url,signal,ms){return new Promise((resolve,reject)=>{
+ const cb='__xz133_'+Date.now().toString(36)+Math.random().toString(36).slice(2);let done=false,timer,sc;
+ const fin=(fn,v)=>{if(done)return;done=true;clearTimeout(timer);if(sc&&sc.parentNode)sc.parentNode.removeChild(sc);try{delete window[cb]}catch(e){window[cb]=undefined}if(signal)signal.removeEventListener('abort',ab);fn(v)};
+ const ab=()=>fin(reject,Object.assign(new Error('cancelled'),{cancelled:true}));
+ if(signal&&signal.aborted)return ab();
+ window[cb]=d=>fin(resolve,d);
+ try{const u=new URL(url);u.searchParams.set('callback',cb);sc=document.createElement('script');sc.async=true;sc.src=u.toString();sc.onerror=()=>fin(reject,new Error('Deezer could not be reached'));if(signal)signal.addEventListener('abort',ab,{once:true});timer=setTimeout(()=>fin(reject,Object.assign(new Error('timeout'),{timeout:true})),ms||8000);document.head.appendChild(sc)}catch(e){fin(reject,e)}})}
+async function deezerCatalog(q,o){
+ const u=new URL('https://api.deezer.com/search');u.searchParams.set('q',q);u.searchParams.set('limit','25');u.searchParams.set('output','jsonp');
+ const j=await jsonp(u.toString(),o&&o.signal,8500);
+ if(!j||j.error||!Array.isArray(j.data))throw new Error('Deezer catalog unavailable');
+ return j.data.map(x=>{const preview=httpsOnly(x.preview),pid=x.id!=null?String(x.id):'',title=normText(x.title),artist=normText(x.artist&&x.artist.name);
+  if(!pid||!title||!artist||!preview)return null;
+  return{pid,title,artist,album:normText(x.album&&x.album.title),genre:'',dur:Number(x.duration)||0,art:httpsOnly(x.album&&x.album.cover_xl)||httpsOnly(x.album&&x.album.cover_big)||httpsOnly(x.album&&x.album.cover),ext:{preview:1,previewUrl:preview,storeUrl:httpsOnly(x.link),rank:Number(x.rank)||0}}}).filter(Boolean)}
+for(const s of[SRC.ITUNES,SRC.DEEZER])if(s&&!SEARCH_SOURCES.includes(s))SEARCH_SOURCES.push(s);
+registerSearchProvider(SRC.ITUNES,(q,o)=>itunesSearch(q,o));
+registerSearchProvider(SRC.DEEZER,deezerCatalog);
+
+/* ---------------------------------------------------------------- popular songs in search */
+function popularList(out){
+ const seen=new Set(),res=[];
+ for(const r of (out&&out.results)||[]){if(![SRC.ITUNES,SRC.DEEZER].includes(r.src)||r.playable===false)continue;
+  const k=nrm(r.artist)+'|'+nrm(r.title).replace(/\b(feat|ft)\b.*$/,'').trim();if(seen.has(k))continue;seen.add(k);res.push(r)}
+ res.sort((a,b)=>(b.score||0)-(a.score||0));return res.slice(0,8)}
+const popRow=r=>{const t=resultToTrack(r);delete t.ext.rank;const art=t.ext&&t.ext.art?`<img src="${esc(t.ext.art)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="ol-img">`:'';
+ const saved=!!mapGet()[tKey(t)],hint=saved?'Full song':(ytKey()?'Full song':'Needs a YouTube link');
+ const sub=[t.artist,t.dur>0?fT(t.dur):'',hint].filter(Boolean).join(' · ');
+ return`<div class="row ol-row yt-row" data-ykey="${esc(r.key)}"><div class="art" style="${tint(t)}">♫${art}</div><div class="rm" data-act="ytPlay" role="button" tabindex="0" aria-label="Play full song ${esc(t.title)}"><b>${esc(t.title)}</b><small>${esc(sub)}</small></div><span class="ol-badge">YouTube</span></div>`};
+function paintPopular(kind,out){
+ const el=q1('#ol');if(!el||!OL.q)return;const old=el.querySelector('.yt-pop');if(old)old.remove();
+ if(kind==='loading'||!ytAuto()||!out)return;
+ const l=popularList(out);if(!l.length)return;
+ const note=ytKey()?'':'<button class="ytp-setup" data-act="ytKey">Set up a free YouTube key so these play automatically</button>';
+ el.insertAdjacentHTML('afterbegin',`<div class="yt-pop"><h3 class="sec">Popular songs</h3><div aria-label="Popular songs, full length through YouTube">${l.map(popRow).join('')}</div>${note}<small class="ol-credit">Catalog by Apple and Deezer · plays the full song through YouTube</small></div>`)}
+{const _p=olPaint;olPaint=function(kind,out){_p.apply(this,arguments);try{paintPopular(kind,out)}catch(e){}}}
+ACT.ytPlay=function(el){
+ const row=el&&el.closest?el.closest('.yt-row'):null;if(!row||!OL.out)return;
+ const list=popularList(OL.out),hit=list.find(r=>r.key===row.dataset.ykey);if(!hit)return;
+ const ids=[];
+ for(const r of list){let t=T.get(r.id);if(!t){t=resultToTrack(r);if(!t)continue;delete t.ext.rank;t.ext.temp=1;if(t.ext.art)ART.set(t.id,t.ext.art);T.set(t.id,t)}ids.push(t.id)}
+ const i=ids.indexOf(hit.id);if(i<0)return;playQ(ids,i)};
+ACT.ytKey=()=>askKey();
+
+/* ---------------------------------------------------------------- settings */
+const chip=(a,k,v,on,l)=>`<button class="chip ${on?'on':''}" data-act="${a}" data-${k}="${v}" aria-pressed="${on?'true':'false'}">${l}</button>`;
+function settingsBlock(){
+ const m=xzMinSec(),key=ytKey(),n=Object.keys(mapGet()).length;
+ return `<h3 class="sec">Short songs</h3><p class="mu" style="font-size:12.5px;margin:0 0 8px">Hide anything this short from the library, search and playlists you browse. Songs with no length (like radio) always stay.</p><div class="chips">${[[0,'Show all'],[30,'30 s or less'],[45,'45 s or less'],[60,'60 s or less']].map(([v,l])=>chip('setminsec','v',v,m===v,l)).join('')}</div>
+<h3 class="sec">Full songs from YouTube</h3><p class="mu" style="font-size:12.5px;margin:0 0 8px">Popular songs only come as 30-second previews from Apple and Deezer. With this on, they play in full through the YouTube player instead. YouTube plays in its own small player, so the equalizer and crossfade don’t apply to it.</p><div class="chips">${chip('setytauto','v','1',ytAuto(),'On')}${chip('setytauto','v','0',!ytAuto(),'Off')}</div>
+${n?`<div class="row" role="button" tabindex="0" data-act="ytClear"><div class="rm"><b>Forget saved YouTube matches</b><small>${n} song${n===1?'':'s'} matched</small></div></div>`:''}`}
+const FIELD='flex:1;min-width:0;padding:9px 11px;border-radius:10px;border:1px solid var(--ln);background:transparent;color:inherit;font:inherit';
+function connBlock(){
+ const yk=ytKey(),jid=(typeof JAM_CFG!=='undefined'&&JAM_CFG.clientId&&JAM_CFG.clientId!=='b869d1a9')?JAM_CFG.clientId:'';
+ return `<h2 id="xz-conn" style="scroll-margin-top:84px">Connections &amp; keys</h2><p class="mu" style="font-size:12.5px;margin:0 0 8px">Your own free IDs and keys for online music. They stay on this device and are never included in backups or sync.</p>
+<div class="card"><b>YouTube Data API key</b><p class="mu" id="yt-key-status" style="font-size:12.5px;margin:4px 0">${yk?'Saved on this device · ends …'+esc(yk.slice(-4)):'Not set · you can still paste a link for each song'}</p><small class="mu">Lets X.ZON find full songs by itself. Free, no card: console.cloud.google.com → new project → enable “YouTube Data API v3” → Credentials → API key.</small><div class="bar"><input id="yt-key-in" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="YouTube API key (AIza…)" aria-label="YouTube API key" value="${esc(yk)}" style="${FIELD}"><button class="pill" data-act="ytKeySave">Save</button></div><div class="bar"><button class="pill" data-act="ytKeyTest">Test key</button>${yk?'<button class="pill" data-act="ytKeyClear">Remove</button>':''}</div><small class="mu" id="yt-key-msg" role="status" aria-live="polite"></small></div>
+<div class="card"><b>Jamendo Client ID</b><p class="mu" style="font-size:12.5px;margin:4px 0">${jid?'Using your own ID · ends …'+esc(jid.slice(-3)):'Using the built-in ID'}</p><small class="mu">Optional: your own free Client ID (devportal.jamendo.com) if Jamendo shows an error in search. Leave empty to use the built-in one.</small><div class="bar"><input id="jamcid" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="32" placeholder="Jamendo Client ID" aria-label="Jamendo Client ID" value="${esc(jid)}" style="${FIELD}"><button class="pill" data-act="jamSave">Save</button></div></div>`}
+{const _v=vSet;vSet=function(){let h=_v.apply(this,arguments);
+ const re=/<h2>Music sources<\/h2><div class="card"><b>Jamendo<\/b>[\s\S]*?data-act="jamSave">Save<\/button><\/div><\/div>/;
+ if(re.test(h))h=h.replace(re,()=>connBlock());else{const j=h.indexOf('<h2>Your data</h2>');h=j<0?h+connBlock():h.slice(0,j)+connBlock()+h.slice(j)}
+ const k='<h3 class="sec">Default sort</h3>',i=h.indexOf(k);return i<0?h:h.slice(0,i)+settingsBlock()+h.slice(i)}}
+const keyMsg=(t,bad)=>{const m=document.getElementById('yt-key-msg');if(m){m.textContent=t;m.style.color=bad?'#c0392b':''}};
+ACT.ytKeySave=async()=>{
+ const i=document.getElementById('yt-key-in'),v=String(i&&i.value||'').trim().replace(/^["']+|["']+$/g,'');
+ if(v&&!/^[\w-]{20,80}$/.test(v)){keyMsg('That doesn’t look like a YouTube API key. Copy the whole key, with no spaces.',true);return}
+ setYtKey(v);const st=document.getElementById('yt-key-status');
+ if(!v){if(st)st.textContent='Not set · you can still paste a link for each song';keyMsg('');toast('YouTube key removed');return}
+ if(st)st.textContent='Saved on this device · ends …'+v.slice(-4);keyMsg('Saved. Checking it…');
+ const r=await testKey(v);keyMsg(r.ok?'Saved · key works.':'Saved, but: '+r.msg,!r.ok);toast(r.ok?'YouTube key saved':'Key saved, but YouTube rejected it');
+ if(r.ok&&YP.active&&YP.track&&YP.state===-1)route(YP.track,true,{retry:true})};
+ACT.ytKeyTest=async()=>{const i=document.getElementById('yt-key-in'),v=String(i&&i.value||'').trim()||ytKey();
+ if(!v){keyMsg('Paste a key first.',true);return}keyMsg('Checking…');const r=await testKey(v);keyMsg(r.msg,!r.ok)};
+ACT.ytKeyClear=()=>{setYtKey('');toast('YouTube key removed');try{R(true)}catch(e){}};
+ACT.setminsec=e=>{ST.minSec=+e.dataset.v;svS();R(true);toast(ST.minSec>0?'Hiding songs of '+ST.minSec+' seconds or less':'Showing all songs')};
+ACT.setytauto=e=>{ST.ytAuto=e.dataset.v==='1';svS();R(true);toast(ST.ytAuto?'Full songs through YouTube: on':'Full songs through YouTube: off');if(!ST.ytAuto&&YP.active)stop(false)};
+ACT.ytClear=async()=>{const ok=await ask({title:'Forget saved matches?',msg:'X.ZON will look the songs up again next time.',ok:'Forget',danger:true});if(ok){lsSet('xzon.ytmap','{}');R(true);toast('Matches cleared')}};
+
+window.__XZON_V133__={version:133,minSec:xzMinSec,yt:YP,parseYT};
+})();
+</script>
 </body></html>
 
 <!-- X.ZON v78 artwork-first home and playlist search -->
